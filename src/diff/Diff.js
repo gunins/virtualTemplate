@@ -32,7 +32,7 @@ const convert = (source, target) => toArray(deprecated(source, target))
 const diff = (source = filterMap(), target = filterMap()) => source.reduce((_, path, value) => setResult(path, value, target, _), {
     update: [],
     add:    [],
-    delete: convert(source, target)
+    remove: convert(source, target)
 });
 
 export {diff, flatten}

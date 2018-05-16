@@ -130,7 +130,7 @@ describe('test for file diff', () => {
                     value: 2
                 }
             ],
-            delete: [
+            remove: [
                 {
                     path:  'c.f.g.0.h',
                     value: 1

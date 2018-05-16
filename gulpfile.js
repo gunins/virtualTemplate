@@ -1,5 +1,6 @@
 const gulp = require('gulp');
-const rollup = require('rollup-stream');
+const rollupStream = require('rollup-stream');
+const rollup = require('rollup');
 const source = require('vinyl-source-stream');
 const mocha = require('gulp-mocha');
 const del = require('del');
@@ -23,10 +24,11 @@ gulp.task('clean', () => {
     ]);
 });
 
-gulp.task('rollup', ['clean'], () => rollup({
+gulp.task('rollup', ['clean'], () => rollupStream({
     input:  './src/index.js',
     format: 'umd',
-    name:   'virtualtemplate'
+    name:   'virtualtemplate',
+    rollup
 }).pipe(source('index.js'))
     .pipe(gulp.dest('./dist')));
 
@@ -34,10 +36,11 @@ gulp.task('rollupTest', ['rollup'], () => gulp
     .src(['test/**/*.js'], {read: false})
     .pipe(chain(({path}) => {
         const name = path.replace(process.cwd() + 'test/', '');
-        return rollup({
+        return rollupStream({
             input:  path,
             format: 'umd',
-            name
+            name,
+            rollup
         })
             .pipe(source(name))
             .pipe(gulp.dest('./target'));
