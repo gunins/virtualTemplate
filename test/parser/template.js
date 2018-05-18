@@ -8,7 +8,7 @@ describe('test for flattening dom Nodes', () => {
 
     it('test Dom Parser', () => {
 
-        const html = `<div class="content-view"><div class={oo}"one second" aria-autocomplete="list" ><span data-id={uu} data-test={bb} data-var={aa} ></span><span data-title={ff} ></span>
+        const html = `<div class={oo}"content-view"><div class={oo}"one second" aria-autocomplete="list" ><span data-id={uu} data-test={bb} data-var={aa} ></span><span data-title={ff} ></span>
         <div class="inner js-post" 
         data-post={ab.bb.0.c} 
         data-post-template="two-columns-gallery">
