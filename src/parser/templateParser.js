@@ -1,5 +1,6 @@
 const tagMatch = /<[a-z|-]+[^>]*?(={[a-z.A-Z0-9]+})+(.|\n)*?>/g;
 const textMatch = /{{[a-zA-Z0-9.]*}}/g;
+//Magic taking matching block. Neet more study to understand this.
 const blockMatch = /{#([a-zA-Z0-9.]+)\s*}((.|\n*?)+){\/\1\s*}/g;
 
 const reduceTag = (tag, attributes) => attributes
@@ -19,7 +20,7 @@ const extractBinding = _ => _.match(/{{(.*?)}}/)[1];
 
 const idTemplate = (_, id) => `${_} id="${id}"`;
 const textTemplate = (id) => `<span id="${id}"></span>`;
-const blockTemplate = (id, [_,tag] = [false,'span']) => `<${tag} id=${id}></${tag}>`;
+const blockTemplate = (id, [_,tag] = [false,'span']) => `<${tag} id="${id}"></${tag}>`;
 
 const tagId = id => `tag_${Date.now()}_${id}`;
 const textId = id => `text_${Date.now()}_${id}`;

@@ -26,8 +26,10 @@ gulp.task('clean', () => {
 
 gulp.task('rollup', ['clean'], () => rollupStream({
     input:  './src/index.js',
-    format: 'umd',
-    name:   'virtualtemplate',
+    output: {
+        name:   'virtualtemplate',
+        format: 'umd',
+    },
     rollup
 }).pipe(source('index.js'))
     .pipe(gulp.dest('./dist')));
@@ -38,11 +40,12 @@ gulp.task('rollupTest', ['rollup'], () => gulp
         const name = path.replace(process.cwd() + 'test/', '');
         return rollupStream({
             input:  path,
-            format: 'umd',
-            name,
+            output: {
+                name,
+                format: 'umd',
+            },
             rollup
-        })
-            .pipe(source(name))
+        }).pipe(source(name))
             .pipe(gulp.dest('./target'));
     })));
 

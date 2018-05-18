@@ -1,63 +1,90 @@
-import {diff, flatten} from '../diff/Diff';
-import {filterMap} from '../utils/FilterMap';
-import {option} from "../utils/option";
+import {option} from '../utils/option';
 
-const tagBegin = (current, attribute) => option()
+const idGenerator = (template = _ => `${_}`) => {
+    let id = 0;
+    return () => template(++id);
+};
+const beginningTag = /^\s*<[a-z|-]+/;
+const tagWithID = (current, attribute) => option()
     .or(current, () => new RegExp(`(^<[a-z-]+\\s+id="[^"]+".*?)(${attribute}=${current})`))
     .finally(() => new RegExp(`^<[a-z-]+\\s+id="[^"]+"`));
 
 
-const textTemplate = (uid, tag, value) => `<${tag} id="${uid}">${value}</${tag}>`;
-
-
 const tagAttributeRegex = (uid) => new RegExp(`<[a-z-]+\\s+id="${uid}"(.|\\n)*?>`);
+const tagEmptyRegex = uid => new RegExp(`<([a-z-]+)\\s+id="${uid}">.*?</\\1>`);
 
-const tagTextRegex = (uid) => new RegExp(`<([a-z-]+)\\s+id="${uid}">.*?</\\1>`);
+
+const uid = idGenerator((id) => `template_${Date.now()}_${id}`);
+const idTemplate = (_, id) => `${_} id="${id}"`;
+
 
 const updateAttribute = (_, {current, attribute, value}) => _
-    .replace(tagBegin(current, attribute), (_, curr) => option()
+    .replace(tagWithID(current, attribute), (_, curr) => option()
         .or(current, () => curr + `${attribute}="${value} ${current.replace(/"/g, '')}"`)
         .finally(() => _ + ` ${attribute}="${value}"`));
 
-const setAttributes = (match, attributes, {path, value}) => attributes
-    .filter(({binding}) => binding === path)
-    .reduce((_, {attribute, value: current}) => updateAttribute(_, {current, attribute, value}), match)
+const setAttributes = (match, {attributes, values}) => attributes
+    .map(({attribute, value: current, binding}) => ({
+        attribute,
+        current,
+        value: (values.find(({path}) => binding === path) || {}).value
+    }))
+    .filter(({value}) => value)
+    .reduce((_, {attribute, current, value}) => updateAttribute(_, {current, attribute, value}), match)
 
-const attribute = (template, {uid, attributes}, binding) => template
-    .replace(tagAttributeRegex(uid), match => setAttributes(match, attributes, binding));
+const attribute = (template, {uid, attributes, values}) => template
+    .replace(tagAttributeRegex(uid), match => setAttributes(match, {attributes, values}));
+
+const textTemplate = (uid, tag, value) => `<${tag} id="${uid}">${value}</${tag}>`;
+const text = (template, {uid, values}) => values.reduce((_, {value}) => _.replace(tagEmptyRegex(uid), (_, tag) => textTemplate(uid, tag, value)), template);
+
+const flattenBlock = (_, obj, index) => ([..._.filter((_, i) => i !== index), [..._.find((_, i) => i === index) || [], obj]]);
+
+const groupValues = (array) => array.reduce((acc, {path: segment, value}) => {
+    const [head, tail] = segment.split(/\.(.+)/);
+    const index = isNaN(+head) ? 0 : +head;
+    const path = isNaN(+head) ? segment : tail;
+    return flattenBlock(acc, {path, value}, index)
+}, []);
+
+const block = (template, {uid, children, values}) => template.replace(tagEmptyRegex(uid), () => groupValues(values).map(_ => templateRenderer(children, _)).join('\n'));
 
 
-const text = (template, {uid}, {value}) => template.replace(tagTextRegex(uid), (match, tag) => textTemplate(uid, tag, value));
+const setBinding = (type) => (template, ...args) => type ? ({
+    text,
+    attribute,
+    block
+})[type](template, ...args) : template;
 
-const block = (_) => _;
-
-
-const setBinding = (type) => (_, ...args) => type ? ({text, attribute, block})[type](_, ...args) : _;
-
-const inAttributes = (path, array) => array.filter(({binding}) => binding === path).length > 0;
-
-const add = (_, {path, value}, bindings) => bindings
-    .filter(({binding, attributes}) => option().or(attributes, () => inAttributes(path, attributes)).finally(() => binding === path))
-    .reduce((_, {bindingType, ...data}) => setBinding(bindingType)(_, data, {path, value}), _);
-
-const update = (_) => _;
-const remove = (_) => _;
-
-const jobs = key => (...args) => ({update, add, remove})[key](...args);
-const prepareTemplate = (template, process, key, bindings) => process[key].reduce((_, bind) => jobs(key)(_, bind, bindings), template);
-
-const defaults = {order: ['remove', 'update', 'add']};
-const templateRenderer = ({template, bindings}, options = {}) => {
-    let currentData = filterMap();
-    const {order} = {...options, ...defaults};
-    return {
-        render(data) {
-            const newData = flatten(data);
-            const process = diff(newData, currentData);
-            currentData = data;
-            const output = order.reduce((_, key) => prepareTemplate(_, process, key, bindings), template);
-            return output;
-        }
-    }
+const inScope = filter => (paths, bindings) => {
+    const values = filter(paths, bindings);
+    return option().or(values.length > 0, () => ({...bindings, values})).finally(() => ({}))
 };
+
+const inBlock = inScope((paths, {blockName}) => paths.map(({path, value}) => {
+    const [head, tail] = path.split(/\.(.+)/);
+    return ({value, path: tail, head})
+}).filter(({head}) => blockName === head));
+
+const inAttributes = inScope((paths, {attributes}) => paths
+    .filter(({path}) => attributes.find(({binding}) => binding === path)));
+
+const inText = inScope((paths, {binding}) => paths.filter(({path}) => path === binding));
+
+const isBlock = ({bindingType}) => bindingType === 'block';
+const isText = ({bindingType}) => bindingType === 'text';
+const isAttribute = ({bindingType}) => bindingType === 'attribute';
+
+const findPath = (paths, _) => option()
+    .or(isBlock(_), () => inBlock(paths, _))
+    .or(isAttribute(_), () => inAttributes(paths, _))
+    .or(isText(_), () => inText(paths, _))
+    .finally(() => ({}));
+
+const templateRenderer = ({template, bindings}, values, id = uid()) => bindings
+    .reduce((_, binding) => [..._, findPath(values, binding)], [])
+    .reduce((_, {bindingType, ...data}) => setBinding(bindingType)(_, data), template)
+    .replace(beginningTag, (_) => idTemplate(_, id));
+
+
 export {templateRenderer};
