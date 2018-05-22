@@ -20,9 +20,12 @@ describe('test for flattening dom Nodes', () => {
 
                     <div class="box-users-likes">
                         <ul class="list-users">
-                            {#list}
+                        
+                            {#lista}
+                            <div>  
+                            {#listb}
                             <li>
-                                {#list}
+                                {#listc}
                                     <div class="item js-user" data-username="jnash33">
                                         <a href="/jnash33/" data-caption={caption}>
                                             <img src="https://assets.awwwards.com/bundles/tvweb/images/nophoto.png"
@@ -33,9 +36,11 @@ describe('test for flattening dom Nodes', () => {
                                          {{item}}
                                        
                                     </div>
-                                 {/list}
+                                 {/listc}
                             </li>
-                            {/list}
+                            {/listb}
+                            </div>
+                            {/lista}
 
                         </ul>
 
@@ -71,17 +76,21 @@ describe('test for flattening dom Nodes', () => {
             ff:     'ffBinding',
             inText: 'inTextBinding',
             ab:     {bb: [{c: 'test in array'}]},
-            list:   {
-                list: [
-                    {caption: 'captionBinding1', item: 'itemBinding1'},
-                    {caption: 'captionBinding2', item: 'itemBinding2'},
-                    {caption: 'captionBinding3', item: 'itemBinding3'}
-                ]
+            lista:   {
+                listb: {
+
+                    listc: [
+                        {caption: 'captionBinding1', item: 'itemBinding1'},
+                        {caption: 'captionBinding2', item: 'itemBinding2'},
+                        {caption: 'captionBinding3', item: 'itemBinding3'}
+                    ]
+                }
             }
         };
         const {add} = diff(flatten(data));
-        const string = templateRenderer({template, bindings}, add);
-        console.log(string);
+        const {template: after, rendered} = templateRenderer({template, bindings}, add);
+        console.log(after);
+        console.log(rendered);
         console.log(Date.now());
 
 
