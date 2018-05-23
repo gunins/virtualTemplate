@@ -1,6 +1,6 @@
 import {inScope, joinString, concat, getHead} from './utils';
 import {templateRenderer} from '../templateRenderer';
-import {templateId, reduce, combine} from './utils';
+import {templateId, fold, combine} from './utils';
 import {monad} from '../../utils/Monad';
 import {lensPath, over, set, view} from '../../utils/lenses';
 import {compose} from '../../utils/curry';
@@ -58,8 +58,8 @@ const segmentRenderer = ({map, parent, index}, children) => monad(templateRender
     )({}));
 
 
-const joinTemplate = reduce(templateLens, (left, right) => joinTogether(left, right));
-const joinBindings = reduce(renderedLens, (left, right) => concat(left, right));
+const joinTemplate = fold(templateLens, (left, right) => joinTogether(left, right));
+const joinBindings = fold(renderedLens, (left, right) => concat(left, right));
 const addToTemplate = (id) => combine(templateLens, (left, right) => left.replace(tagEmptyRegex(id), () => right));
 
 const mergeChildren = (..._) => compose(

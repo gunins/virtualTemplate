@@ -20,9 +20,11 @@ const joinString = (separator = '.') => (...args) => args.filter(_ => _ !== unde
 
 const concat = (...arrays) => arrays.reduce((acc, _) => option().or(isArray(_), () => [...acc, ..._]).or(_, () => [...acc, _]).finally(() => acc), []);
 
-const reduce = curry((lens, fn, left, right) => left.reduce((acc, obj) => over(lens, left => fn(left, view(lens, obj)), acc), right));
-const combine = curry((lens, fn, left, right, acc)=>  over(lens, () => fn(view(lens, left), view(lens, right)), acc));
+const fold = curry((lens, fn, left, right) => left.reduce((acc, obj) => over(lens, left => fn(left, view(lens, obj)), acc), right));
+const combine = curry((lens, fn, left, right, acc) => over(lens, () => fn(view(lens, left), view(lens, right)), acc));
 
-const getHead= _=>_.split(/\.(.+)/);
+const find = curry((lens, array, fn) => view(lens, array.find(_ => fn(_))));
 
-export {inScope, idGenerator, templateId, joinString, reduce, concat, combine, getHead}
+const getHead = _ => _.split(/\.(.+)/);
+
+export {inScope, idGenerator, templateId, joinString, fold, concat, combine, getHead, find}

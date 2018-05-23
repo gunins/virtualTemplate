@@ -1,5 +1,15 @@
-import {inScope, joinString, concat} from './utils';
+import {inScope, joinString, concat, find} from './utils';
 import {option} from '../../utils/option';
+import {lensPath, set, view, over} from '../../utils/lenses';
+import {compose} from '../../utils/curry';
+
+const templateLens = lensPath('template');
+const renderedLens = lensPath('rendered');
+const pathLens = lensPath('path');
+const typeLens = lensPath('type');
+const attributeLens = lensPath('attribute');
+const valueLens = lensPath('value');
+
 
 const tagAttributeRegex = (uid) => new RegExp(`<[a-z-]+\\s+id="${uid}"(.|\\n)*?>`);
 const tagWithID = (current, attribute) => option()
@@ -16,23 +26,25 @@ const updateAttribute = (_, {current, attribute, value}) => _
         .finally(() => _ + ` ${attribute}="${value}"`));
 
 const setAttributes = (match, {attributes, values}) => attributes
-    .map(({attribute, value: current, binding}) => ({
+    .map(({attribute, value: current, binding}) => compose(
+        set(valueLens, find(valueLens, values, ({path}) => binding === path))
+    )({
         attribute,
-        current,
-        value: (values.find(({path}) => binding === path) || {}).value
+        current
     }))
     .filter(({value}) => value)
-    .reduce((_, {attribute, current, value}) => updateAttribute(_, {current, attribute, value}), match);
+    .reduce((_, data) => updateAttribute(_, data), match);
 
-const attribute = ({template, rendered}, {uid, attributes, values}) => {
-    return ({
-        template: template.replace(tagAttributeRegex(uid), match => setAttributes(match, {attributes, values})),
-        rendered:concat(rendered, values.map(({path, value, head}) => ({
-            path: joinString('.')(head, path),
-            value,
-            uid,
-            type: (attributes.find(({binding}) => binding === path) || {}).attribute
-        })))
-    });
-};
+
+const setTemplate = (template, {uid, ...data}) => template.replace(tagAttributeRegex(uid), match => setAttributes(match, data));
+
+const setRendered = (rendered, {values, attributes, uid}) => concat(rendered, values.map(({path, value, head}) => compose(
+    set(pathLens, joinString('.')(head, path)),
+    set(typeLens, find(attributeLens, attributes, ({binding}) => binding === path))
+)({value, uid})));
+
+const attribute = (_, data) => compose(
+    over(templateLens, template => setTemplate(template, data)),
+    over(renderedLens, rendered => setRendered(rendered, data))
+)(_);
 export {attribute, isAttribute, inAttributes}
