@@ -1,5 +1,8 @@
 import {option} from '../../utils/option';
+import {over, view} from '../../utils/lenses';
+import {curry} from '../../utils/curry';
 
+const {isArray} = Array;
 const inScope = filter => (bindings, paths) => {
     const values = filter(bindings, paths);
     return option()
@@ -11,10 +14,15 @@ const idGenerator = (template = _ => `${_}`) => {
     let id = 0;
     return () => template(++id);
 };
-const uid = idGenerator((id) => `template_${Date.now()}_${id}`);
+const templateId = idGenerator((id) => `template_${Date.now()}_${id}`);
 
 const joinString = (separator = '.') => (...args) => args.filter(_ => _ !== undefined).join(separator);
 
-const objMap = _ => fn => fn(_);
+const concat = (...arrays) => arrays.reduce((acc, _) => option().or(isArray(_), () => [...acc, ..._]).or(_, () => [...acc, _]).finally(() => acc), []);
 
-export {inScope, idGenerator, uid, joinString, objMap}
+const reduce = curry((lens, fn, left, right) => left.reduce((acc, obj) => over(lens, left => fn(left, view(lens, obj)), acc), right));
+const combine = curry((lens, fn, left, right, acc)=>  over(lens, () => fn(view(lens, left), view(lens, right)), acc));
+
+const getHead= _=>_.split(/\.(.+)/);
+
+export {inScope, idGenerator, templateId, joinString, reduce, concat, combine, getHead}

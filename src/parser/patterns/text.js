@@ -1,13 +1,12 @@
-import {inScope, joinString} from './utils';
+import {inScope, joinString, concat} from './utils';
 
 const tagEmptyRegex = uid => new RegExp(`<([a-z-]+)\\s+id="${uid}">.*?</\\1>`);
 const textTemplate = (uid, tag, value) => `<${tag} id="${uid}">${value}</${tag}>`;
-const text = ({template, rendered,...args}, {uid, values}) => values
+const text = ({template, rendered}, {uid, values}) => values
     .reduce(({template, rendered}, {path, value, head}) => ({
         template: template.replace(tagEmptyRegex(uid), (_, tag) => textTemplate(uid, tag, value)),
-        rendered: [...rendered, {path: joinString('.')(head, path), value, uid, type: 'text'}],
-        ...args
-    }), {template, rendered,...args});
+        rendered: concat(rendered, {path: joinString('.')(head, path), value, uid, type: 'text'})
+    }), {template, rendered});
 
 const inText = inScope(({binding}, paths) => paths.filter(({path}) => path === binding));
 const isText = ({bindingType}) => bindingType === 'text';
