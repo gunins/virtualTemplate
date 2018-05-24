@@ -5,7 +5,7 @@ import {text, inText, isText} from './patterns/text';
 import {attribute, isAttribute, inAttributes} from './patterns/attribute';
 import {block, isBlock, inBlock} from './patterns/block'
 import {compose, curry} from '../utils/curry';
-import {lensPath, over, set, view} from '../utils/lenses';
+import {lensPath, set, view} from '../utils/lenses';
 
 const uidLens = lensPath('uid');
 const templateLens = lensPath('template');
@@ -42,7 +42,7 @@ const updateBindings = (bindings, newId) => {
             return bindings;
         }
     }
-}
+};
 const setTemplate = curry((fn, uid, template) => template.replace(beginningTag, (_, tag, idSegment, currentId) => {
     fn(currentId);
     return idTemplate(tag, uid)
@@ -50,11 +50,11 @@ const setTemplate = curry((fn, uid, template) => template.replace(beginningTag, 
 
 const addTemplateId = ({template, bindings}, uid) => {
     const setBindings = updateBindings(bindings, uid);
-    const addId = setTemplate(currentId => setBindings.replaceId(currentId));
-    template = addId(uid, template);
+    const parsed = setTemplate(currentId => setBindings.replaceId(currentId), uid, template);
     return compose(
         set(bindingsLens, view(valueLens, setBindings)),
-    )({template, uid})
+        set(templateLens, parsed)
+    )({uid})
 };
 
 const findBindings = (paths) => bindings => bindings.reduce((_, binding) => [..._, findPath(binding, paths)], []);

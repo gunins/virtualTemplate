@@ -2,9 +2,12 @@ import {inScope, joinString, concat} from './utils';
 import {lensPath, over, set} from '../../utils/lenses';
 import {compose} from '../../utils/curry';
 
+const BINDING_TYPE = 'text';
+
 const templateLens = lensPath('template');
 const renderedLens = lensPath('rendered');
 const pathLens = lensPath('path');
+const typeLens = lensPath('type');
 
 const tagEmptyRegex = uid => new RegExp(`<([a-z-]+)\\s+id="${uid}">.*?</\\1>`);
 const textTemplate = (uid, tag, value) => `<${tag} id="${uid}">${value}</${tag}>`;
@@ -15,11 +18,11 @@ const isText = ({bindingType}) => bindingType === 'text';
 const setTemplate = (template, uid, {value}) => template.replace(tagEmptyRegex(uid), (_, tag) => textTemplate(uid, tag, value));
 
 const setRendered = (source, uid, {head, path, value}) => concat(source, compose(
-    set(pathLens, joinString('.')(head, path))
+    set(pathLens, joinString('.')(head, path)),
+    set(typeLens, BINDING_TYPE)
 )({
     value,
-    uid,
-    type: 'text'
+    uid
 }));
 
 const text = (_, {uid, values}) => values

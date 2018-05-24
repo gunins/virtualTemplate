@@ -10,11 +10,18 @@ const inScope = filter => (bindings, paths) => {
         .finally(() => ({}))
 };
 
+const counter = () => {
+    let id = 0;
+    return () => id++;
+};
+const newId = counter();
+
 const idGenerator = (template = _ => `${_}`) => {
     let id = 0;
     return () => template(++id);
 };
-const templateId = idGenerator((id) => `template_${Date.now()}_${id}`);
+
+const templateId = idGenerator((id) => `template_${newId()}_${id}`);
 
 const joinString = (separator = '.') => (...args) => args.filter(_ => _ !== undefined).join(separator);
 
@@ -27,4 +34,4 @@ const find = curry((lens, array, fn) => view(lens, array.find(_ => fn(_))));
 
 const getHead = _ => _.split(/\.(.+)/);
 
-export {inScope, idGenerator, templateId, joinString, fold, concat, combine, getHead, find}
+export {inScope, idGenerator, templateId, joinString, fold, concat, combine, getHead, find, counter, newId}
