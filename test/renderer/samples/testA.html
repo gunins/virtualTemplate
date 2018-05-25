@@ -1,0 +1,41 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+</head>
+<body>
+<div class="container">
+
+</div>
+<script src="../../../target/test/renderer/browserScript.js"></script>
+<script>
+    const container = document.querySelector('.container');
+    const {compiled, rendered} = window['renderer/browserScript'].js;
+    const fragment = document.createDocumentFragment();
+    const template = fragment.appendChild(document.createElement('template'));
+    template.innerHTML = compiled;
+    window.showBody = () => {
+
+        const elMaps = rendered.map(({uid, ..._}) => {
+            const el = template.content.querySelector(`#${uid}`);
+            return {..._, uid, el}
+
+        });
+
+        elMaps.forEach(({uid, el}) => el.removeAttribute('id'));
+
+        container.appendChild(template.content);
+        console.log(container.innerHTML);
+        elMaps.forEach(({uid, el}) => {
+            console.log(uid, JSON.stringify(el.dataset))
+        });
+    }
+    ;
+
+</script>
+</body>
+</html>

@@ -37,7 +37,7 @@ gulp.task('rollup', ['clean'], () => rollupStream({
 gulp.task('rollupTest', ['rollup'], () => gulp
     .src(['test/**/*.js'], {read: false})
     .pipe(chain(({path}) => {
-        const name = path.replace(process.cwd() + 'test/', '');
+        const name = path.replace(process.cwd() + '/test/', '');
         return rollupStream({
             input:  path,
             output: {
@@ -45,7 +45,7 @@ gulp.task('rollupTest', ['rollup'], () => gulp
                 format: 'umd',
             },
             rollup
-        }).pipe(source(name))
+        }).pipe(source(path))
             .pipe(gulp.dest('./target'));
     })));
 
