@@ -24,17 +24,18 @@ gulp.task('clean', () => {
     ]);
 });
 
-gulp.task('rollup', ['clean'], () => rollupStream({
+gulp.task('rollup', gulp.series('clean', () => rollupStream({
     input:  './src/index.js',
     output: {
         name:   'virtualtemplate',
         format: 'umd',
     },
     rollup
-}).pipe(source('index.js'))
-    .pipe(gulp.dest('./dist')));
+})
+    .pipe(source('index.js'))
+    .pipe(gulp.dest('./dist'))));
 
-gulp.task('rollupTest', ['rollup'], () => gulp
+gulp.task('rollupTest', gulp.series('rollup', () => gulp
     .src(['test/**/*.js'], {read: false})
     .pipe(chain(({path}) => {
         const name = path.replace(process.cwd() + '/test/', '');
@@ -47,15 +48,15 @@ gulp.task('rollupTest', ['rollup'], () => gulp
             rollup
         }).pipe(source(path))
             .pipe(gulp.dest('./target'));
-    })));
+    }))));
 
 
-gulp.task('test', ['rollupTest'], () => {
+gulp.task('test', gulp.series('rollupTest', () => {
     return gulp.src([
         './target/test/**/*.js'
     ], {read: false})
         .pipe(mocha({reporter: 'list'}));
 
-});
+}));
 
-gulp.task('default', ['test']);
+gulp.task('default', gulp.series('test'));
